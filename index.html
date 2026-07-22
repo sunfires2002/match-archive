@@ -18,9 +18,7 @@
     font-family:'Zen Kaku Gothic New',sans-serif;
     -webkit-font-smoothing:antialiased;
   }
-  header{
-    max-width:720px; margin:0 auto; padding:56px 20px 28px;
-  }
+  header{ max-width:720px; margin:0 auto; padding:56px 20px 28px; }
   .eyebrow{
     font-family:ui-monospace,'JetBrains Mono',monospace;
     font-size:12px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase;
@@ -52,7 +50,8 @@
   main{ max-width:720px; margin:0 auto; padding:16px 20px 80px; display:flex; flex-direction:column; gap:12px; }
   .card{
     background:var(--card); border:1px solid var(--card-border); border-radius:14px;
-    padding:18px 20px; display:flex; justify-content:space-between; align-items:center; gap:16px;
+    padding:18px 20px; display:flex; justify-content:space-between; align-items:center;
+    gap:16px; flex-wrap:wrap; row-gap:12px;
   }
   .match{ font-weight:700; font-size:16px; }
   .match .vs{ color:var(--muted); font-weight:400; margin:0 6px; }
@@ -60,6 +59,7 @@
     font-family:ui-monospace,'JetBrains Mono',monospace; font-size:12px;
     color:var(--muted); margin-top:6px; letter-spacing:.02em;
   }
+  .watch-group{ display:flex; gap:8px; flex-shrink:0; }
   .watch{
     flex-shrink:0; text-decoration:none; font-size:13px; font-weight:700;
     background:var(--accent); color:#1a1300; padding:9px 16px; border-radius:999px;
@@ -112,23 +112,37 @@ function toMatches(rows){
   })).filter(m => m.team && m.url);
 }
 
+function groupMatches(matches){
+  const map = new Map();
+  matches.forEach(m => {
+    const key = `${m.team}__${m.opponent}__${m.date}`;
+    if(!map.has(key)) map.set(key, { team:m.team, opponent:m.opponent, date:m.date, videos:[] });
+    map.get(key).videos.push({ half:m.half, url:m.url });
+  });
+  return [...map.values()];
+}
+
 function render(matches, activeFilter){
   const list = document.getElementById('list');
   const filtered = activeFilter === 'すべて'
     ? matches
     : matches.filter(m => m.team === activeFilter || m.opponent === activeFilter);
 
-  if(filtered.length === 0){
+  const groups = groupMatches(filtered).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  if(groups.length === 0){
     list.innerHTML = '<div class="state">まだ試合動画がありません。</div>';
     return;
   }
-  list.innerHTML = filtered.map(m => `
+  list.innerHTML = groups.map(g => `
     <div class="card">
       <div>
-        <div class="match">${m.team}<span class="vs">vs</span>${m.opponent || '相手未記入'}</div>
-        <div class="meta">${m.date || '日付未記入'} ・ ${m.half || ''}</div>
+        <div class="match">${g.team}<span class="vs">vs</span>${g.opponent || '相手未記入'}</div>
+        <div class="meta">${g.date || '日付未記入'}</div>
       </div>
-      <a class="watch" href="${m.url}" target="_blank" rel="noopener">観る ▶</a>
+      <div class="watch-group">
+        ${g.videos.map(v => `<a class="watch" href="${v.url}" target="_blank" rel="noopener">${v.half || '動画'} ▶</a>`).join('')}
+      </div>
     </div>
   `).join('');
 }
@@ -151,7 +165,7 @@ function renderFilters(matches){
 fetch(CSV_URL)
   .then(res => { if(!res.ok) throw new Error('fetch failed'); return res.text(); })
   .then(text => {
-    const matches = toMatches(parseCSV(text)).sort((a,b) => new Date(b.date) - new Date(a.date));
+    const matches = toMatches(parseCSV(text));
     renderFilters(matches);
     render(matches, 'すべて');
   })
