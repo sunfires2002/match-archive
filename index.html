@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>試合動画置き場</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14171c; --card:#1b1f26; --card-border:rgba(241,237,228,.08);
+    --accent:#e8a33d; --accent-soft:rgba(232,163,61,.14);
+    --text:#f1ede4; --muted:#8b93a1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    max-width:720px; margin:0 auto; padding:56px 20px 28px;
+  }
+  .eyebrow{
+    font-family:ui-monospace,'JetBrains Mono',monospace;
+    font-size:12px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase;
+  }
+  h1{
+    font-family:'M PLUS Rounded 1c',sans-serif; font-weight:800;
+    font-size:clamp(24px,5vw,34px); line-height:1.5; margin:10px 0 12px;
+  }
+  .lede{ color:var(--muted); font-size:15px; margin:0; }
+  .lightbar{
+    height:3px; margin-top:24px; border-radius:3px;
+    background:linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity:.7;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .lightbar{ animation:glow 3.5s ease-in-out infinite; }
+    @keyframes glow{ 0%,100%{opacity:.5;} 50%{opacity:.9;} }
+  }
+  .filters{
+    max-width:720px; margin:0 auto; padding:0 20px 8px;
+    display:flex; flex-wrap:wrap; gap:8px;
+  }
+  .chip{
+    font-family:'Zen Kaku Gothic New',sans-serif; font-size:13px;
+    background:var(--card); border:1px solid var(--card-border); color:var(--text);
+    padding:7px 14px; border-radius:999px; cursor:pointer;
+  }
+  .chip.active{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+  main{ max-width:720px; margin:0 auto; padding:16px 20px 80px; display:flex; flex-direction:column; gap:12px; }
+  .card{
+    background:var(--card); border:1px solid var(--card-border); border-radius:14px;
+    padding:18px 20px; display:flex; justify-content:space-between; align-items:center; gap:16px;
+  }
+  .match{ font-weight:700; font-size:16px; }
+  .match .vs{ color:var(--muted); font-weight:400; margin:0 6px; }
+  .meta{
+    font-family:ui-monospace,'JetBrains Mono',monospace; font-size:12px;
+    color:var(--muted); margin-top:6px; letter-spacing:.02em;
+  }
+  .watch{
+    flex-shrink:0; text-decoration:none; font-size:13px; font-weight:700;
+    background:var(--accent); color:#1a1300; padding:9px 16px; border-radius:999px;
+    white-space:nowrap;
+  }
+  .state{ color:var(--muted); text-align:center; padding:60px 20px; font-size:14px; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">match archive</div>
+    <h1>せっかく毎週集まってるんやから、<br>残ってたらええやん</h1>
+    <p class="lede">エンジョイリーグの試合動画、ここに集めていきます。</p>
+    <div class="lightbar"></div>
+  </header>
+
+  <div class="filters" id="filters"></div>
+  <main id="list">
+    <div class="state">読み込み中…</div>
+  </main>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRt2w9dEQyqbL7x0ln0Rb8jRAMh7m9Ywetu2wrXbAVaxca_hxmI1K-jVMPcXuDhHEB9DFolEsOyoefg/pub?output=csv";
+
+function parseCSV(text){
+  const rows=[]; let row=[], field='', inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQuotes){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"'; i++;} else inQuotes=false; }
+      else field+=c;
+    } else {
+      if(c==='"') inQuotes=true;
+      else if(c===','){ row.push(field); field=''; }
+      else if(c==='\n' || c==='\r'){
+        if(c==='\r' && text[i+1]==='\n') i++;
+        row.push(field); rows.push(row); row=[]; field='';
+      } else field+=c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(v => v.trim() !== ''));
+}
+
+function toMatches(rows){
+  const [header, ...body] = rows;
+  return body.map(r => ({
+    team: r[0]?.trim(), opponent: r[1]?.trim(), date: r[2]?.trim(),
+    url: r[3]?.trim(), half: r[4]?.trim()
+  })).filter(m => m.team && m.url);
+}
+
+function render(matches, activeFilter){
+  const list = document.getElementById('list');
+  const filtered = activeFilter === 'すべて'
+    ? matches
+    : matches.filter(m => m.team === activeFilter || m.opponent === activeFilter);
+
+  if(filtered.length === 0){
+    list.innerHTML = '<div class="state">まだ試合動画がありません。</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(m => `
+    <div class="card">
+      <div>
+        <div class="match">${m.team}<span class="vs">vs</span>${m.opponent || '相手未記入'}</div>
+        <div class="meta">${m.date || '日付未記入'} ・ ${m.half || ''}</div>
+      </div>
+      <a class="watch" href="${m.url}" target="_blank" rel="noopener">観る ▶</a>
+    </div>
+  `).join('');
+}
+
+function renderFilters(matches){
+  const teams = [...new Set(matches.flatMap(m => [m.team, m.opponent]).filter(Boolean))];
+  const box = document.getElementById('filters');
+  const buttons = ['すべて', ...teams];
+  box.innerHTML = buttons.map(t => `<button class="chip" data-team="${t}">${t}</button>`).join('');
+  box.querySelectorAll('.chip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      box.querySelectorAll('.chip').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      render(matches, btn.dataset.team);
+    });
+  });
+  box.querySelector('.chip').classList.add('active');
+}
+
+fetch(CSV_URL)
+  .then(res => { if(!res.ok) throw new Error('fetch failed'); return res.text(); })
+  .then(text => {
+    const matches = toMatches(parseCSV(text)).sort((a,b) => new Date(b.date) - new Date(a.date));
+    renderFilters(matches);
+    render(matches, 'すべて');
+  })
+  .catch(() => {
+    document.getElementById('list').innerHTML =
+      '<div class="state">動画リストの読み込みに失敗しました。時間をおいて開き直してみてください。</div>';
+  });
+</script>
+</body>
+</html>
