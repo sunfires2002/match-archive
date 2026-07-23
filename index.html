@@ -25,7 +25,7 @@
   }
   h1{
     font-family:'M PLUS Rounded 1c',sans-serif; font-weight:800;
-    font-size:clamp(24px,5vw,34px); line-height:1.5; margin:10px 0 12px;
+    font-size:clamp(22px,5vw,34px); line-height:1.5; margin:10px 0 12px;
   }
   .lede{ color:var(--muted); font-size:15px; margin:0; }
   .lightbar{
@@ -53,24 +53,31 @@
     padding:18px 20px; display:flex; justify-content:space-between; align-items:center;
     gap:16px; flex-wrap:wrap; row-gap:12px;
   }
-  .match{ font-weight:700; font-size:16px; }
+  .match{ font-weight:700; font-size:16px; word-break:break-word; }
   .match .vs{ color:var(--muted); font-weight:400; margin:0 6px; }
   .meta{
     font-family:ui-monospace,'JetBrains Mono',monospace; font-size:12px;
     color:var(--muted); margin-top:6px; letter-spacing:.02em;
   }
-  .watch-group{ display:flex; gap:8px; flex-shrink:0; }
+  .watch-group{ display:flex; gap:8px; flex-wrap:wrap; flex-shrink:0; }
   .watch{
     flex-shrink:0; text-decoration:none; font-size:13px; font-weight:700;
     background:var(--accent); color:#1a1300; padding:9px 16px; border-radius:999px;
     white-space:nowrap;
   }
   .state{ color:var(--muted); text-align:center; padding:60px 20px; font-size:14px; }
+
+  @media (max-width:480px){
+    header{ padding:40px 16px 20px; }
+    .card{ padding:16px; }
+    .watch-group{ width:100%; }
+    .watch{ flex:1; text-align:center; }
+  }
 </style>
 </head>
 <body>
   <header>
-    <div class="eyebrow">match archive</div>
+    <div class="eyebrow">試合動画置き場</div>
     <h1>せっかく毎週集まってるんやから、<br>残ってたらええやん</h1>
     <p class="lede">エンジョイリーグの試合動画、ここに集めていきます。</p>
     <div class="lightbar"></div>
@@ -83,6 +90,20 @@
 
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRt2w9dEQyqbL7x0ln0Rb8jRAMh7m9Ywetu2wrXbAVaxca_hxmI1K-jVMPcXuDhHEB9DFolEsOyoefg/pub?output=csv";
+
+function escapeHtml(str){
+  return String(str ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[ch]));
+}
+
+function safeUrl(url){
+  try {
+    const u = new URL(String(url ?? '').trim(), location.href);
+    if(u.protocol === 'http:' || u.protocol === 'https:') return u.href;
+  } catch(e) {}
+  return '#';
+}
 
 function parseCSV(text){
   const rows=[]; let row=[], field='', inQuotes=false;
@@ -137,11 +158,11 @@ function render(matches, activeFilter){
   list.innerHTML = groups.map(g => `
     <div class="card">
       <div>
-        <div class="match">${g.team}<span class="vs">vs</span>${g.opponent || '相手未記入'}</div>
-        <div class="meta">${g.date || '日付未記入'}</div>
+        <div class="match">${escapeHtml(g.team)}<span class="vs">vs</span>${escapeHtml(g.opponent) || '相手未記入'}</div>
+        <div class="meta">${escapeHtml(g.date) || '日付未記入'}</div>
       </div>
       <div class="watch-group">
-        ${g.videos.map(v => `<a class="watch" href="${v.url}" target="_blank" rel="noopener">${v.half || '動画'} ▶</a>`).join('')}
+        ${g.videos.map(v => `<a class="watch" href="${escapeHtml(safeUrl(v.url))}" target="_blank" rel="noopener">${escapeHtml(v.half) || '動画'} ▶</a>`).join('')}
       </div>
     </div>
   `).join('');
@@ -151,7 +172,7 @@ function renderFilters(matches){
   const teams = [...new Set(matches.flatMap(m => [m.team, m.opponent]).filter(Boolean))];
   const box = document.getElementById('filters');
   const buttons = ['すべて', ...teams];
-  box.innerHTML = buttons.map(t => `<button class="chip" data-team="${t}">${t}</button>`).join('');
+  box.innerHTML = buttons.map(t => `<button class="chip" data-team="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('');
   box.querySelectorAll('.chip').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       box.querySelectorAll('.chip').forEach(b=>b.classList.remove('active'));
