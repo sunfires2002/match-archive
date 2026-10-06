@@ -29,6 +29,13 @@
     font-size:clamp(22px,5vw,34px); line-height:1.5; margin:10px 0 12px;
   }
   .lede{ color:var(--muted); font-size:15px; margin:0; }
+  .quiz-link{
+    display:inline-flex; align-items:center; gap:6px;
+    margin-top:16px; font-size:13px; font-weight:700;
+    color:var(--accent); text-decoration:none;
+    border:1.5px solid var(--accent); border-radius:999px;
+    padding:8px 16px;
+  }
   .lightbar{
     height:3px; margin-top:24px; border-radius:3px;
     background:linear-gradient(90deg, transparent, var(--accent), transparent);
@@ -62,50 +69,39 @@
   }
   .watch-group{ display:flex; gap:8px; flex-wrap:wrap; flex-shrink:0; }
   .watch{
-  flex-shrink:0; text-decoration:none; font-size:13px; font-weight:700;
-  background:var(--accent); color:#1a1300; padding:9px 16px; border-radius:999px;
-  white-space:nowrap; width:100px; text-align:center;
-  display:inline-flex; align-items:center; justify-content:center;
-}
-.watch-empty{
-  width:100px; visibility:hidden;
-}
-  .watch-360{
-  background:transparent; border:1.5px solid var(--accent); color:var(--accent);
-}
+    flex-shrink:0; text-decoration:none; font-size:13px; font-weight:700;
+    background:var(--accent); color:#1a1300; padding:9px 16px; border-radius:999px;
+    white-space:nowrap; width:100px; text-align:center;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .watch-empty{ width:100px; visibility:hidden; }
+  .watch-360{ background:transparent; border:1.5px solid var(--accent); color:var(--accent); }
   .state{ color:var(--muted); text-align:center; padding:60px 20px; font-size:14px; }
-
+  footer.site-footer{
+    max-width:720px; margin:40px auto 0; padding:24px 20px 48px;
+    border-top:1px solid var(--card-border);
+  }
+  footer.site-footer h2{
+    font-family:'Zen Kaku Gothic New',sans-serif; font-weight:700;
+    font-size:13px; color:var(--muted); margin:0 0 10px;
+  }
+  footer.site-footer p{
+    font-size:12px; line-height:1.8; color:var(--muted); margin:0 0 6px;
+  }
   @media (max-width:480px){
     header{ padding:40px 16px 20px; }
     .card{ padding:16px; }
     .watch-group{ width:100%; }
-    .watch{ flex:1; text-align:center; }
+    .watch{ flex:1; }
   }
-  footer.site-footer{
-  max-width:720px; margin:40px auto 0; padding:24px 20px 48px;
-  border-top:1px solid var(--card-border);
-}
-footer.site-footer h2{
-  font-family:'Zen Kaku Gothic New',sans-serif; font-weight:700;
-  font-size:13px; color:var(--muted); margin:0 0 10px;
-}
-footer.site-footer p{
-  font-size:12px; line-height:1.8; color:var(--muted); margin:0 0 6px;
-}
-.quiz-link{
-  display:inline-flex; align-items:center; gap:6px;
-  margin-top:16px; font-size:13px; font-weight:700;
-  color:var(--accent); text-decoration:none;
-  border:1.5px solid var(--accent); border-radius:999px;
-  padding:8px 16px;
-}</style>
+</style>
 </head>
 <body>
   <header>
     <div class="eyebrow">試合動画置き場</div>
     <h1>せっかく毎週集まってるんやから、<br>残ってたらええやん</h1>
-   <p class="lede">FUN HYOGO LEAGUEの試合動画、ここに集めていきます。</p>
-   <a class="quiz-link" href="https://sunfires2002.github.io/futsal-quiz/" target="_blank" rel="noopener">📋 ルールクイズに挑戦する</a>
+    <p class="lede">FUN HYOGO LEAGUEの試合動画、ここに集めていきます。</p>
+    <a class="quiz-link" href="https://sunfires2002.github.io/futsal-quiz/" target="_blank" rel="noopener">📋 ルールクイズに挑戦する</a>
     <div class="lightbar"></div>
   </header>
 
@@ -162,12 +158,23 @@ function toMatches(rows){
 function groupMatches(matches){
   const map = new Map();
   matches.forEach(m => {
-    const key = `${m.team}__${m.opponent}__${m.date}`;
+    const key = m.team + '__' + m.opponent + '__' + m.date;
     if(!map.has(key)) map.set(key, { team:m.team, opponent:m.opponent, date:m.date, videos:[] });
     map.get(key).videos.push({ half:m.half, url:m.url, url360:m.url360 });
   });
   return [...map.values()];
 }
+
+function slot(label, v, key){
+  if(!v || !v[key]){
+    return '<span class="watch-empty"></span>';
+  }
+  const url = escapeHtml(safeUrl(v[key]));
+  const cls = (key === 'url360') ? 'watch watch-360' : 'watch';
+  const text = (key === 'url360') ? (label + '360°') : label;
+  return '<a class="' + cls + '" href="' + url + '" target="_blank" rel="noopener">' + text + ' ▶</a>';
+}
+
 function render(matches, activeFilter){
   const list = document.getElementById('list');
   const filtered = activeFilter === 'すべて'
@@ -179,16 +186,6 @@ function render(matches, activeFilter){
   if(groups.length === 0){
     list.innerHTML = '<div class="state">まだ試合動画がありません。</div>';
     return;
-  }
-
-  function slot(label, v, key){
-    if(!v || !v[key]){
-      return '<span class="watch-empty"></span>';
-    }
-    const url = escapeHtml(safeUrl(v[key]));
-    const cls = (key === 'url360') ? 'watch watch-360' : 'watch';
-    const text = (key === 'url360') ? (label + '360°') : label;
-    return '<a class="' + cls + '" href="' + url + '" target="_blank" rel="noopener">' + text + ' ▶</a>';
   }
 
   const cards = groups.map(function(g){
@@ -210,48 +207,12 @@ function render(matches, activeFilter){
 
   list.innerHTML = cards.join('');
 }
-  const slot = (label, v, key) => (v && v[key])
-    ? `<a class="watch${key==='url360'?' watch-360':''}" href="${escapeHtml(safeUrl(v[key]))}" target="_blank" rel="noopener">${label}${key==='url360'?'360°':''} ▶</a>`
-    : `<span class="watch-empty"></span>`;
-
-  list.innerHTML = groups.map(g => {
-    const zenpan = g.videos.find(v => v.half === '前半');
-    const kouhan = g.videos.find(v => v.half === '後半');
-    return `
-    <div class="card">
-      <div>
-        <div class="match">${escapeHtml(g.team)}<span class="vs">vs</span>${escapeHtml(g.opponent) || '相手未記入'}</div>
-        <div class="meta">${escapeHtml(g.date) || '日付未記入'}</div>
-      </div>
-      <div class="watch-group">
-        ${slot('前半', zenpan, 'url')}
-        ${slot('前半', zenpan, 'url360')}
-        ${slot('後半', kouhan, 'url')}
-        ${slot('後半', kouhan, 'url360')}
-      </div>
-    </div>`;
-  }).join('');
-}  list.innerHTML = groups.map(g => `
-    <div class="card">
-      <div>
-        <div class="match">${escapeHtml(g.team)}<span class="vs">vs</span>${escapeHtml(g.opponent) || '相手未記入'}</div>
-        <div class="meta">${escapeHtml(g.date) || '日付未記入'}</div>
-      </div>
-      <div class="watch-group">
-        ${g.videos.map(v => `
-          <a class="watch" href="${escapeHtml(safeUrl(v.url))}" target="_blank" rel="noopener">${escapeHtml(v.half) || '動画'} ▶</a>
-          ${v.url360 ? `<a class="watch watch-360" href="${escapeHtml(safeUrl(v.url360))}" target="_blank" rel="noopener">${escapeHtml(v.half) || ''}360° ▶</a>` : ''}
-        `).join('')}
-      </div>
-    </div>
-  `).join('');
-}
 
 function renderFilters(matches){
   const teams = [...new Set(matches.flatMap(m => [m.team, m.opponent]).filter(Boolean))];
   const box = document.getElementById('filters');
   const buttons = ['すべて', ...teams];
-  box.innerHTML = buttons.map(t => `<button class="chip" data-team="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('');
+  box.innerHTML = buttons.map(t => '<button class="chip" data-team="' + escapeHtml(t) + '">' + escapeHtml(t) + '</button>').join('');
   box.querySelectorAll('.chip').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       box.querySelectorAll('.chip').forEach(b=>b.classList.remove('active'));
@@ -275,11 +236,11 @@ fetch(CSV_URL)
   });
 </script>
   <footer class="site-footer">
-  <h2>試合動画の撮影・公開について</h2>
-  <p>掲載している試合動画は、両チームおよび審判の許可を得た上で撮影しています。</p>
-  <p>フルサイズの試合動画については、FUN兵庫リーグ事務局に確認の上、関係者向けのYouTube限定公開として掲載しています。</p>
-  <p>動画の収益化は行っていません。</p>
-  <p>掲載動画についてお気づきの点がありましたら、各YouTube動画のコメント欄よりお知らせください。</p>
-</footer>
+    <h2>試合動画の撮影・公開について</h2>
+    <p>掲載している試合動画は、両チームおよび審判の許可を得た上で撮影しています。</p>
+    <p>フルサイズの試合動画については、FUN兵庫リーグ事務局に確認の上、関係者向けのYouTube限定公開として掲載しています。</p>
+    <p>動画の収益化は行っていません。</p>
+    <p>掲載動画についてお気づきの点がありましたら、各YouTube動画のコメント欄よりお知らせください。</p>
+  </footer>
 </body>
 </html>
