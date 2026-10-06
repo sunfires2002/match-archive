@@ -181,6 +181,35 @@ function render(matches, activeFilter){
     return;
   }
 
+  function slot(label, v, key){
+    if(!v || !v[key]){
+      return '<span class="watch-empty"></span>';
+    }
+    const url = escapeHtml(safeUrl(v[key]));
+    const cls = (key === 'url360') ? 'watch watch-360' : 'watch';
+    const text = (key === 'url360') ? (label + '360°') : label;
+    return '<a class="' + cls + '" href="' + url + '" target="_blank" rel="noopener">' + text + ' ▶</a>';
+  }
+
+  const cards = groups.map(function(g){
+    const zenpan = g.videos.find(v => v.half === '前半');
+    const kouhan = g.videos.find(v => v.half === '後半');
+    return '<div class="card">'
+      + '<div>'
+      + '<div class="match">' + escapeHtml(g.team) + '<span class="vs">vs</span>' + (escapeHtml(g.opponent) || '相手未記入') + '</div>'
+      + '<div class="meta">' + (escapeHtml(g.date) || '日付未記入') + '</div>'
+      + '</div>'
+      + '<div class="watch-group">'
+      + slot('前半', zenpan, 'url')
+      + slot('前半', zenpan, 'url360')
+      + slot('後半', kouhan, 'url')
+      + slot('後半', kouhan, 'url360')
+      + '</div>'
+      + '</div>';
+  });
+
+  list.innerHTML = cards.join('');
+}
   const slot = (label, v, key) => (v && v[key])
     ? `<a class="watch${key==='url360'?' watch-360':''}" href="${escapeHtml(safeUrl(v[key]))}" target="_blank" rel="noopener">${label}${key==='url360'?'360°':''} ▶</a>`
     : `<span class="watch-empty"></span>`;
