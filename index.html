@@ -152,9 +152,8 @@ function groupMatches(matches){
   const map = new Map();
   matches.forEach(m => {
     const key = `${m.team}__${m.opponent}__${m.date}`;
-    if(!map.has(key)) map.set(key, { team:m.team, opponent:m.opponent, date:m.date, videos:[], url360:'' });
-    map.get(key).videos.push({ half:m.half, url:m.url });
-    if(m.url360) map.get(key).url360 = m.url360;
+    if(!map.has(key)) map.set(key, { team:m.team, opponent:m.opponent, date:m.date, videos:[] });
+    map.get(key).videos.push({ half:m.half, url:m.url, url360:m.url360 });
   });
   return [...map.values()];
 }
@@ -177,8 +176,10 @@ function render(matches, activeFilter){
         <div class="meta">${escapeHtml(g.date) || '日付未記入'}</div>
       </div>
       <div class="watch-group">
-        ${g.videos.map(v => `<a class="watch" href="${escapeHtml(safeUrl(v.url))}" target="_blank" rel="noopener">${escapeHtml(v.half) || '動画'} ▶</a>`).join('')}
-        ${g.url360 ? `<a class="watch watch-360" href="${escapeHtml(safeUrl(g.url360))}" target="_blank" rel="noopener">360° ▶</a>` : ''}
+        ${g.videos.map(v => `
+          <a class="watch" href="${escapeHtml(safeUrl(v.url))}" target="_blank" rel="noopener">${escapeHtml(v.half) || '動画'} ▶</a>
+          ${v.url360 ? `<a class="watch watch-360" href="${escapeHtml(safeUrl(v.url360))}" target="_blank" rel="noopener">${escapeHtml(v.half) || ''}360° ▶</a>` : ''}
+        `).join('')}
       </div>
     </div>
   `).join('');
