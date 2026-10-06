@@ -88,11 +88,16 @@
   footer.site-footer p{
     font-size:12px; line-height:1.8; color:var(--muted); margin:0 0 6px;
   }
-  @media (max-width:480px){
+ @media (max-width:480px){
     header{ padding:40px 16px 20px; }
     .card{ padding:16px; }
-    .watch-group{ width:100%; }
-    .watch{ flex:1; }
+    .watch-group{
+      width:100%;
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:8px;
+    }
+    .watch, .watch-empty{ width:auto; }
   }
 </style>
 </head>
