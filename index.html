@@ -66,6 +66,9 @@
     background:var(--accent); color:#1a1300; padding:9px 16px; border-radius:999px;
     white-space:nowrap;
   }
+  .watch-360{
+  background:transparent; border:1.5px solid var(--accent); color:var(--accent);
+}
   .state{ color:var(--muted); text-align:center; padding:60px 20px; font-size:14px; }
 
   @media (max-width:480px){
@@ -141,7 +144,7 @@ function toMatches(rows){
   const [header, ...body] = rows;
   return body.map(r => ({
     team: r[0]?.trim(), opponent: r[1]?.trim(), date: r[2]?.trim(),
-    url: r[3]?.trim(), half: r[4]?.trim()
+    url: r[3]?.trim(), half: r[4]?.trim(), url360: r[5]?.trim()
   })).filter(m => m.team && m.url);
 }
 
@@ -149,12 +152,12 @@ function groupMatches(matches){
   const map = new Map();
   matches.forEach(m => {
     const key = `${m.team}__${m.opponent}__${m.date}`;
-    if(!map.has(key)) map.set(key, { team:m.team, opponent:m.opponent, date:m.date, videos:[] });
+    if(!map.has(key)) map.set(key, { team:m.team, opponent:m.opponent, date:m.date, videos:[], url360:'' });
     map.get(key).videos.push({ half:m.half, url:m.url });
+    if(m.url360) map.get(key).url360 = m.url360;
   });
   return [...map.values()];
 }
-
 function render(matches, activeFilter){
   const list = document.getElementById('list');
   const filtered = activeFilter === 'すべて'
@@ -175,6 +178,7 @@ function render(matches, activeFilter){
       </div>
       <div class="watch-group">
         ${g.videos.map(v => `<a class="watch" href="${escapeHtml(safeUrl(v.url))}" target="_blank" rel="noopener">${escapeHtml(v.half) || '動画'} ▶</a>`).join('')}
+        ${g.url360 ? `<a class="watch watch-360" href="${escapeHtml(safeUrl(g.url360))}" target="_blank" rel="noopener">360° ▶</a>` : ''}
       </div>
     </div>
   `).join('');
