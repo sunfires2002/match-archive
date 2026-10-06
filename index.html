@@ -62,10 +62,14 @@
   }
   .watch-group{ display:flex; gap:8px; flex-wrap:wrap; flex-shrink:0; }
   .watch{
-    flex-shrink:0; text-decoration:none; font-size:13px; font-weight:700;
-    background:var(--accent); color:#1a1300; padding:9px 16px; border-radius:999px;
-    white-space:nowrap;
-  }
+  flex-shrink:0; text-decoration:none; font-size:13px; font-weight:700;
+  background:var(--accent); color:#1a1300; padding:9px 16px; border-radius:999px;
+  white-space:nowrap; width:100px; text-align:center;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.watch-empty{
+  width:100px; visibility:hidden;
+}
   .watch-360{
   background:transparent; border:1.5px solid var(--accent); color:var(--accent);
 }
@@ -176,7 +180,29 @@ function render(matches, activeFilter){
     list.innerHTML = '<div class="state">まだ試合動画がありません。</div>';
     return;
   }
-  list.innerHTML = groups.map(g => `
+
+  const slot = (label, v, key) => (v && v[key])
+    ? `<a class="watch${key==='url360'?' watch-360':''}" href="${escapeHtml(safeUrl(v[key]))}" target="_blank" rel="noopener">${label}${key==='url360'?'360°':''} ▶</a>`
+    : `<span class="watch-empty"></span>`;
+
+  list.innerHTML = groups.map(g => {
+    const zenpan = g.videos.find(v => v.half === '前半');
+    const kouhan = g.videos.find(v => v.half === '後半');
+    return `
+    <div class="card">
+      <div>
+        <div class="match">${escapeHtml(g.team)}<span class="vs">vs</span>${escapeHtml(g.opponent) || '相手未記入'}</div>
+        <div class="meta">${escapeHtml(g.date) || '日付未記入'}</div>
+      </div>
+      <div class="watch-group">
+        ${slot('前半', zenpan, 'url')}
+        ${slot('前半', zenpan, 'url360')}
+        ${slot('後半', kouhan, 'url')}
+        ${slot('後半', kouhan, 'url360')}
+      </div>
+    </div>`;
+  }).join('');
+}  list.innerHTML = groups.map(g => `
     <div class="card">
       <div>
         <div class="match">${escapeHtml(g.team)}<span class="vs">vs</span>${escapeHtml(g.opponent) || '相手未記入'}</div>
