@@ -11,6 +11,7 @@
   :root{
     --bg:#14171c; --card:#1b1f26; --card-border:rgba(241,237,228,.08);
     --accent:#e8a33d; --accent-soft:rgba(232,163,61,.14);
+    --accent2:#4fb3b0; --accent2-soft:rgba(79,179,176,.14);
     --text:#f1ede4; --muted:#8b93a1;
   }
   *{box-sizing:border-box;}
@@ -19,25 +20,35 @@
     font-family:'Zen Kaku Gothic New',sans-serif;
     -webkit-font-smoothing:antialiased;
   }
-  header{ max-width:720px; margin:0 auto; padding:56px 20px 28px; }
+  header{ max-width:720px; margin:0 auto; padding:44px 20px 24px; }
+  .brand{ display:flex; align-items:center; gap:8px; margin-bottom:18px; }
+  .brand-mark{
+    width:28px; height:28px; border-radius:50%; flex-shrink:0;
+    background:var(--accent-soft); border:1px solid var(--accent);
+    display:flex; align-items:center; justify-content:center; font-size:14px;
+  }
+  .brand-name{
+    font-family:'M PLUS Rounded 1c',sans-serif; font-weight:800;
+    font-size:14px; color:var(--accent); letter-spacing:.02em;
+  }
   .eyebrow{
     font-family:ui-monospace,'JetBrains Mono',monospace;
     font-size:12px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase;
   }
   h1{
     font-family:'M PLUS Rounded 1c',sans-serif; font-weight:800;
-    font-size:clamp(22px,5vw,34px); line-height:1.5; margin:10px 0 12px;
+    font-size:clamp(20px,4.5vw,30px); line-height:1.5; margin:10px 0 12px;
   }
   .lede{ color:var(--muted); font-size:15px; margin:0; }
   .quiz-link{
     display:inline-flex; align-items:center; gap:6px;
     margin-top:16px; font-size:13px; font-weight:700;
-    color:var(--accent); text-decoration:none;
-    border:1.5px solid var(--accent); border-radius:999px;
+    color:var(--accent2); text-decoration:none;
+    border:1.5px solid var(--accent2); border-radius:999px;
     padding:8px 16px;
   }
   .lightbar{
-    height:3px; margin-top:24px; border-radius:3px;
+    height:3px; margin-top:20px; border-radius:3px;
     background:linear-gradient(90deg, transparent, var(--accent), transparent);
     opacity:.7;
   }
@@ -58,10 +69,10 @@
   main{ max-width:720px; margin:0 auto; padding:16px 20px 80px; display:flex; flex-direction:column; gap:12px; }
   .card{
     background:var(--card); border:1px solid var(--card-border); border-radius:14px;
-    padding:18px 20px; display:flex; justify-content:space-between; align-items:center;
-    gap:16px; flex-wrap:wrap; row-gap:12px;
+    padding:20px; display:flex; justify-content:space-between; align-items:center;
+    gap:16px; flex-wrap:wrap; row-gap:14px;
   }
-  .match{ font-weight:700; font-size:16px; word-break:break-word; }
+  .match{ font-weight:700; font-size:17px; word-break:break-word; }
   .match .vs{ color:var(--muted); font-weight:400; margin:0 6px; }
   .meta{
     font-family:ui-monospace,'JetBrains Mono',monospace; font-size:12px;
@@ -88,8 +99,8 @@
   footer.site-footer p{
     font-size:12px; line-height:1.8; color:var(--muted); margin:0 0 6px;
   }
- @media (max-width:480px){
-    header{ padding:40px 16px 20px; }
+  @media (max-width:480px){
+    header{ padding:36px 16px 20px; }
     .card{ padding:16px; }
     .watch-group{
       width:100%;
@@ -103,6 +114,10 @@
 </head>
 <body>
   <header>
+    <div class="brand">
+      <span class="brand-mark">⚽</span>
+      <span class="brand-name">ENJOY!Futsal</span>
+    </div>
     <div class="eyebrow">試合動画置き場</div>
     <h1>せっかく毎週集まってるんやから、<br>残ってたらええやん</h1>
     <p class="lede">FUN HYOGO LEAGUEの試合動画、ここに集めていきます。</p>
