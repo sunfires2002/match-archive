@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -69,8 +70,7 @@
   main{ max-width:720px; margin:0 auto; padding:16px 20px 80px; display:flex; flex-direction:column; gap:12px; }
   .card{
     background:var(--card); border:1px solid var(--card-border); border-radius:14px;
-    padding:20px; display:flex; justify-content:space-between; align-items:center;
-    gap:16px; flex-wrap:wrap; row-gap:14px;
+    padding:20px; display:flex; flex-direction:column; gap:14px;
   }
   .match{ font-weight:700; font-size:17px; word-break:break-word; }
   .match .vs{ color:var(--muted); font-weight:400; margin:0 6px; }
@@ -78,15 +78,23 @@
     font-family:ui-monospace,'JetBrains Mono',monospace; font-size:12px;
     color:var(--muted); margin-top:6px; letter-spacing:.02em;
   }
-  .watch-group{ display:flex; gap:8px; flex-wrap:wrap; flex-shrink:0; }
-  .watch{
-    flex-shrink:0; text-decoration:none; font-size:13px; font-weight:700;
-    background:var(--accent); color:#1a1300; padding:9px 16px; border-radius:999px;
-    white-space:nowrap; width:100px; text-align:center;
-    display:inline-flex; align-items:center; justify-content:center;
+  .halves{ display:flex; flex-direction:column; gap:8px; }
+  .half-row{ display:flex; align-items:flex-start; gap:12px; }
+  .half-label{
+    min-width:36px; flex-shrink:0; line-height:36px;
+    font-size:13px; font-weight:700; color:var(--muted); white-space:nowrap;
   }
-  .watch-empty{ width:100px; visibility:hidden; }
-  .watch-360{ background:transparent; border:1.5px solid var(--accent); color:var(--accent); }
+  .btns{ display:flex; flex-wrap:wrap; gap:8px; min-width:0; }
+  .watch{
+    width:112px; min-height:36px; padding:8px 6px;
+    display:inline-flex; align-items:center; justify-content:center;
+    text-decoration:none; font-size:12.5px; font-weight:700; white-space:nowrap;
+    background:var(--accent); color:#1a1300; border-radius:999px;
+  }
+  .watch-alt{
+    background:transparent; border:1.5px solid var(--accent); color:var(--accent);
+  }
+  .watch-empty{ display:block; width:112px; height:36px; visibility:hidden; }
   .state{ color:var(--muted); text-align:center; padding:60px 20px; font-size:14px; }
   footer.site-footer{
     max-width:720px; margin:40px auto 0; padding:24px 20px 48px;
@@ -102,12 +110,7 @@
   @media (max-width:480px){
     header{ padding:36px 16px 20px; }
     .card{ padding:16px; }
-    .watch-group{
-      width:100%;
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:8px;
-    }
+    .btns{ display:grid; grid-template-columns:repeat(2, 1fr); flex:1; }
     .watch, .watch-empty{ width:auto; }
   }
 </style>
@@ -132,6 +135,13 @@
 
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRt2w9dEQyqbL7x0ln0Rb8jRAMh7m9Ywetu2wrXbAVaxca_hxmI1K-jVMPcXuDhHEB9DFolEsOyoefg/pub?output=csv";
+
+const SLOTS = [
+  { key:'url',      label:'通常' },
+  { key:'url360',   label:'360°' },
+  { key:'urlScore', label:'スコアカメラ' },
+  { key:'urlRev',   label:'逆アングル' }
+];
 
 function escapeHtml(str){
   return String(str ?? '').replace(/[&<>"']/g, ch => ({
@@ -168,31 +178,84 @@ function parseCSV(text){
 }
 
 function toMatches(rows){
-  const [header, ...body] = rows;
-  return body.map(r => ({
-    team: r[0]?.trim(), opponent: r[1]?.trim(), date: r[2]?.trim(),
-    url: r[3]?.trim(), half: r[4]?.trim(), url360: r[5]?.trim()
-  })).filter(m => m.team && m.url);
+  const body = rows.slice(1);
+  return body.map(function(r){
+    return {
+      team: (r[0] || '').trim(),
+      opponent: (r[1] || '').trim(),
+      date: (r[2] || '').trim(),
+      url: (r[3] || '').trim(),
+      half: (r[4] || '').trim(),
+      url360: (r[5] || '').trim(),
+      urlScore: (r[6] || '').trim(),
+      urlRev: (r[7] || '').trim()
+    };
+  }).filter(function(m){
+    return m.team && (m.url || m.url360 || m.urlScore || m.urlRev);
+  });
 }
 
 function groupMatches(matches){
   const map = new Map();
-  matches.forEach(m => {
+  matches.forEach(function(m){
     const key = m.team + '__' + m.opponent + '__' + m.date;
-    if(!map.has(key)) map.set(key, { team:m.team, opponent:m.opponent, date:m.date, videos:[] });
-    map.get(key).videos.push({ half:m.half, url:m.url, url360:m.url360 });
+    if(!map.has(key)){
+      map.set(key, { team:m.team, opponent:m.opponent, date:m.date, halves:new Map() });
+    }
+    const g = map.get(key);
+    const halfName = m.half || '動画';
+    if(!g.halves.has(halfName)){
+      g.halves.set(halfName, { url:'', url360:'', urlScore:'', urlRev:'' });
+    }
+    const h = g.halves.get(halfName);
+    SLOTS.forEach(function(s){
+      if(m[s.key] && !h[s.key]) h[s.key] = m[s.key];
+    });
   });
   return [...map.values()];
 }
 
-function slot(label, v, key){
-  if(!v || !v[key]){
+function halfOrder(name){
+  if(name === '前半') return 0;
+  if(name === '後半') return 1;
+  return 2;
+}
+
+function slotHtml(slot, h){
+  const url = h[slot.key];
+  if(!url){
     return '<span class="watch-empty"></span>';
   }
-  const url = escapeHtml(safeUrl(v[key]));
-  const cls = (key === 'url360') ? 'watch watch-360' : 'watch';
-  const text = (key === 'url360') ? (label + '360°') : label;
-  return '<a class="' + cls + '" href="' + url + '" target="_blank" rel="noopener">' + text + ' ▶</a>';
+  const cls = (slot.key === 'url') ? 'watch' : 'watch watch-alt';
+  return '<a class="' + cls + '" href="' + escapeHtml(safeUrl(url)) + '" target="_blank" rel="noopener">' + slot.label + ' ▶</a>';
+}
+
+function buttonsHtml(h){
+  let last = -1;
+  SLOTS.forEach(function(s, i){ if(h[s.key]) last = i; });
+  return SLOTS.slice(0, last + 1).map(function(s){
+    return slotHtml(s, h);
+  }).join('');
+}
+
+function cardHtml(g){
+  const names = [...g.halves.keys()].sort(function(a, b){
+    return halfOrder(a) - halfOrder(b);
+  });
+  const rows = names.map(function(name){
+    const h = g.halves.get(name);
+    return '<div class="half-row">'
+      + '<span class="half-label">' + escapeHtml(name) + '</span>'
+      + '<div class="btns">' + buttonsHtml(h) + '</div>'
+      + '</div>';
+  }).join('');
+  return '<div class="card">'
+    + '<div class="card-head">'
+    + '<div class="match">' + escapeHtml(g.team) + '<span class="vs">vs</span>' + (escapeHtml(g.opponent) || '相手未記入') + '</div>'
+    + '<div class="meta">' + (escapeHtml(g.date) || '日付未記入') + '</div>'
+    + '</div>'
+    + '<div class="halves">' + rows + '</div>'
+    + '</div>';
 }
 
 function render(matches, activeFilter){
@@ -207,25 +270,7 @@ function render(matches, activeFilter){
     list.innerHTML = '<div class="state">まだ試合動画がありません。</div>';
     return;
   }
-
-  const cards = groups.map(function(g){
-    const zenpan = g.videos.find(v => v.half === '前半');
-    const kouhan = g.videos.find(v => v.half === '後半');
-    return '<div class="card">'
-      + '<div>'
-      + '<div class="match">' + escapeHtml(g.team) + '<span class="vs">vs</span>' + (escapeHtml(g.opponent) || '相手未記入') + '</div>'
-      + '<div class="meta">' + (escapeHtml(g.date) || '日付未記入') + '</div>'
-      + '</div>'
-      + '<div class="watch-group">'
-      + slot('前半', zenpan, 'url')
-      + slot('前半', zenpan, 'url360')
-      + slot('後半', kouhan, 'url')
-      + slot('後半', kouhan, 'url360')
-      + '</div>'
-      + '</div>';
-  });
-
-  list.innerHTML = cards.join('');
+  list.innerHTML = groups.map(cardHtml).join('');
 }
 
 function renderFilters(matches){
