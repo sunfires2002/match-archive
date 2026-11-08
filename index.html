@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -58,16 +57,39 @@
     @keyframes glow{ 0%,100%{opacity:.5;} 50%{opacity:.9;} }
   }
   .filters{
-    max-width:720px; margin:0 auto; padding:0 20px 8px;
-    display:flex; flex-wrap:wrap; gap:8px;
+    max-width:720px; margin:0 auto; padding:0 20px 12px;
+    display:flex; align-items:center; flex-wrap:wrap; gap:10px;
   }
-  .chip{
-    font-family:'Zen Kaku Gothic New',sans-serif; font-size:13px;
-    background:var(--card); border:1px solid var(--card-border); color:var(--text);
-    padding:7px 14px; border-radius:999px; cursor:pointer;
+  .filters label{ font-size:13px; color:var(--muted); white-space:nowrap; }
+  .team-select{
+    flex:1; min-width:200px; max-width:360px;
+    background:var(--card); color:var(--text);
+    border:1px solid var(--card-border); border-radius:10px;
+    padding:9px 12px; font-size:16px;
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    color-scheme:dark;
   }
-  .chip.active{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
-  main{ max-width:720px; margin:0 auto; padding:16px 20px 80px; display:flex; flex-direction:column; gap:12px; }
+  .team-select:focus{ outline:2px solid var(--accent); outline-offset:2px; }
+  main{ max-width:720px; margin:0 auto; padding:8px 20px 80px; display:flex; flex-direction:column; gap:12px; }
+  .month > summary{
+    list-style:none; cursor:pointer; user-select:none;
+    display:flex; align-items:baseline; gap:10px;
+    padding:12px 4px; border-bottom:1px solid var(--card-border);
+  }
+  .month > summary::-webkit-details-marker{ display:none; }
+  .month > summary::before{
+    content:'▸'; display:inline-block; width:14px;
+    color:var(--accent); font-size:12px; transition:transform .15s;
+  }
+  .month[open] > summary::before{ transform:rotate(90deg); }
+  .month-title{
+    font-family:'M PLUS Rounded 1c',sans-serif; font-weight:800; font-size:16px;
+  }
+  .month-count{
+    font-family:ui-monospace,'JetBrains Mono',monospace;
+    font-size:12px; color:var(--muted);
+  }
+  .month-body{ display:flex; flex-direction:column; gap:12px; padding-top:12px; }
   .card{
     background:var(--card); border:1px solid var(--card-border); border-radius:14px;
     padding:20px; display:flex; flex-direction:column; gap:14px;
@@ -110,6 +132,7 @@
   @media (max-width:480px){
     header{ padding:36px 16px 20px; }
     .card{ padding:16px; }
+    .team-select{ max-width:none; }
     .btns{ display:grid; grid-template-columns:repeat(2, 1fr); flex:1; }
     .watch, .watch-empty{ width:auto; }
   }
@@ -128,13 +151,20 @@
     <div class="lightbar"></div>
   </header>
 
-  <div class="filters" id="filters"></div>
+  <div class="filters">
+    <label for="teamSelect">チームで絞る</label>
+    <select class="team-select" id="teamSelect" disabled>
+      <option>読み込み中…</option>
+    </select>
+  </div>
   <main id="list">
     <div class="state">読み込み中…</div>
   </main>
 
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRt2w9dEQyqbL7x0ln0Rb8jRAMh7m9Ywetu2wrXbAVaxca_hxmI1K-jVMPcXuDhHEB9DFolEsOyoefg/pub?output=csv";
+const ALL = 'すべて';
+const OPEN_MONTHS = 2;
 
 const SLOTS = [
   { key:'url',      label:'通常' },
@@ -258,42 +288,107 @@ function cardHtml(g){
     + '</div>';
 }
 
-function render(matches, activeFilter){
-  const list = document.getElementById('list');
-  const filtered = activeFilter === 'すべて'
-    ? matches
-    : matches.filter(m => m.team === activeFilter || m.opponent === activeFilter);
+function parseDate(str){
+  const m = /^(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})/.exec(String(str || '').trim());
+  if(!m) return null;
+  return { y:Number(m[1]), m:Number(m[2]), d:Number(m[3]) };
+}
 
-  const groups = groupMatches(filtered).sort((a,b) => new Date(b.date) - new Date(a.date));
+function dateNum(str){
+  const p = parseDate(str);
+  return p ? (p.y * 10000 + p.m * 100 + p.d) : 0;
+}
+
+function monthKey(str){
+  const p = parseDate(str);
+  return p ? (p.y * 100 + p.m) : 0;
+}
+
+function monthLabel(key){
+  if(!key) return '日付不明';
+  return Math.floor(key / 100) + '年' + (key % 100) + '月';
+}
+
+function monthCompare(a, b){
+  if(a === 0) return 1;
+  if(b === 0) return -1;
+  return b - a;
+}
+
+function render(matches, team){
+  const list = document.getElementById('list');
+  const filtered = (team === ALL)
+    ? matches
+    : matches.filter(m => m.team === team || m.opponent === team);
+
+  const groups = groupMatches(filtered);
 
   if(groups.length === 0){
     list.innerHTML = '<div class="state">まだ試合動画がありません。</div>';
     return;
   }
-  list.innerHTML = groups.map(cardHtml).join('');
+
+  const byMonth = new Map();
+  groups.forEach(function(g){
+    const k = monthKey(g.date);
+    if(!byMonth.has(k)) byMonth.set(k, []);
+    byMonth.get(k).push(g);
+  });
+
+  const keys = [...byMonth.keys()].sort(monthCompare);
+  const openAll = (team !== ALL);
+
+  list.innerHTML = keys.map(function(k, i){
+    const items = byMonth.get(k).sort(function(a, b){
+      return dateNum(b.date) - dateNum(a.date);
+    });
+    const isOpen = openAll || i < OPEN_MONTHS;
+    return '<details class="month"' + (isOpen ? ' open' : '') + '>'
+      + '<summary>'
+      + '<span class="month-title">' + monthLabel(k) + '</span>'
+      + '<span class="month-count">' + items.length + '試合</span>'
+      + '</summary>'
+      + '<div class="month-body">' + items.map(cardHtml).join('') + '</div>'
+      + '</details>';
+  }).join('');
 }
 
-function renderFilters(matches){
-  const teams = [...new Set(matches.flatMap(m => [m.team, m.opponent]).filter(Boolean))];
-  const box = document.getElementById('filters');
-  const buttons = ['すべて', ...teams];
-  box.innerHTML = buttons.map(t => '<button class="chip" data-team="' + escapeHtml(t) + '">' + escapeHtml(t) + '</button>').join('');
-  box.querySelectorAll('.chip').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      box.querySelectorAll('.chip').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      render(matches, btn.dataset.team);
+function setupFilter(matches){
+  const groups = groupMatches(matches);
+  const counts = new Map();
+  groups.forEach(function(g){
+    [g.team, g.opponent].forEach(function(t){
+      if(t) counts.set(t, (counts.get(t) || 0) + 1);
     });
   });
-  box.querySelector('.chip').classList.add('active');
+  const teams = [...counts.keys()].sort(function(a, b){
+    return (counts.get(b) - counts.get(a)) || a.localeCompare(b, 'ja');
+  });
+
+  const sel = document.getElementById('teamSelect');
+  sel.innerHTML = '';
+  const all = document.createElement('option');
+  all.value = ALL;
+  all.textContent = 'すべてのチーム (' + groups.length + '試合)';
+  sel.appendChild(all);
+  teams.forEach(function(t){
+    const o = document.createElement('option');
+    o.value = t;
+    o.textContent = t + ' (' + counts.get(t) + '試合)';
+    sel.appendChild(o);
+  });
+  sel.disabled = false;
+  sel.addEventListener('change', function(){
+    render(matches, sel.value);
+  });
 }
 
 fetch(CSV_URL)
   .then(res => { if(!res.ok) throw new Error('fetch failed'); return res.text(); })
   .then(text => {
     const matches = toMatches(parseCSV(text));
-    renderFilters(matches);
-    render(matches, 'すべて');
+    setupFilter(matches);
+    render(matches, ALL);
   })
   .catch(() => {
     document.getElementById('list').innerHTML =
