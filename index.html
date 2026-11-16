@@ -71,10 +71,14 @@
     border:1.5px solid var(--accent); border-radius:999px;
     padding:8px 16px;
   }
+  .h1-line2{
+    display:flex; flex-wrap:wrap; align-items:baseline;
+    justify-content:space-between; gap:8px 16px;
+  }
   .motto{
     font-family:ui-monospace,'JetBrains Mono',monospace;
-    font-size:15px; letter-spacing:.12em; color:var(--accent);
-    opacity:.9; margin:14px 0 0;
+    font-size:15px; font-weight:400; letter-spacing:.12em; color:var(--accent);
+    opacity:.9; margin-left:auto; white-space:nowrap;
   }
   .signature{
     font-family:ui-monospace,'JetBrains Mono',monospace;
@@ -181,9 +185,8 @@
       <span class="brand-name">ENJOY!Futsal</span>
     </div>
     <div class="eyebrow">試合動画置き場</div>
-    <h1>せっかく毎週集まってるんやから、<br>残ってたらええやん</h1>
+    <h1>せっかく毎週集まってるんやから、<br><span class="h1-line2">残ってたらええやん<span class="motto">memories that stay</span></span></h1>
     <p class="lede">FUN HYOGO LEAGUEの試合動画、ここに集めていきます。</p>
-    <p class="motto">memories that stay</p>
     <div class="lightbar"></div>
   </header>
   <aside class="side-links">
