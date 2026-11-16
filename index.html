@@ -52,6 +52,17 @@
     margin-top:14px;
   }
   .header-links .quiz-link{ margin-top:0; }
+  .side-links{ max-width:720px; margin:0 auto; padding:0 20px; }
+  @media (min-width:1280px){
+    .side-links{
+      position:fixed; top:44px; left:calc(50% + 384px);
+      width:232px; max-width:none; margin:0; padding:0;
+    }
+    .side-links .header-links{ flex-direction:column; align-items:stretch; gap:8px; margin-top:26px; }
+    .side-links .header-links:first-child{ margin-top:0; }
+    .side-links .cam-link, .side-links .quiz-link{ justify-content:center; }
+    .side-links .links-label{ min-width:0; margin-bottom:2px; }
+  }
   .links-label{ font-size:12px; font-weight:700; color:var(--muted); white-space:nowrap; min-width:132px; }
   .cam-link{
     display:inline-flex; align-items:center; gap:6px;
@@ -162,6 +173,9 @@
     <div class="eyebrow">試合動画置き場</div>
     <h1>せっかく毎週集まってるんやから、<br>残ってたらええやん</h1>
     <p class="lede">FUN HYOGO LEAGUEの試合動画、ここに集めていきます。</p>
+    <div class="lightbar"></div>
+  </header>
+  <aside class="side-links">
     <div class="header-links">
       <span class="links-label">📹 スコアカメラの使い方</span>
       <a class="cam-link" href="https://youtube.com/shorts/dSPshA3GmQM" target="_blank" rel="noopener">はじめる前に(ショート)</a>
@@ -172,8 +186,7 @@
       <span class="links-label">📋 ルールクイズ</span>
       <a class="quiz-link" href="https://sunfires2002.github.io/futsal-quiz/" target="_blank" rel="noopener">ルールクイズに挑戦する</a>
     </div>
-    <div class="lightbar"></div>
-  </header>
+  </aside>
 
   <div class="filters">
     <label for="teamSelect">チームで絞る</label>
