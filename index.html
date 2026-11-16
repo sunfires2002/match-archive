@@ -47,6 +47,19 @@
     border:1.5px solid var(--accent2); border-radius:999px;
     padding:8px 16px;
   }
+  .header-links{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+    margin-top:14px;
+  }
+  .header-links .quiz-link{ margin-top:0; }
+  .links-label{ font-size:12px; font-weight:700; color:var(--muted); white-space:nowrap; min-width:132px; }
+  .cam-link{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:13px; font-weight:700;
+    color:var(--accent); text-decoration:none;
+    border:1.5px solid var(--accent); border-radius:999px;
+    padding:8px 16px;
+  }
   .lightbar{
     height:3px; margin-top:20px; border-radius:3px;
     background:linear-gradient(90deg, transparent, var(--accent), transparent);
@@ -149,7 +162,16 @@
     <div class="eyebrow">試合動画置き場</div>
     <h1>せっかく毎週集まってるんやから、<br>残ってたらええやん</h1>
     <p class="lede">FUN HYOGO LEAGUEの試合動画、ここに集めていきます。</p>
-    <a class="quiz-link" href="https://sunfires2002.github.io/futsal-quiz/" target="_blank" rel="noopener">📋 ルールクイズに挑戦する</a>
+    <div class="header-links">
+      <span class="links-label">📹 スコアカメラの使い方</span>
+      <a class="cam-link" href="https://youtube.com/shorts/dSPshA3GmQM" target="_blank" rel="noopener">はじめる前に(ショート)</a>
+      <a class="cam-link" href="https://youtu.be/kNOcxX3ilGs" target="_blank" rel="noopener">撮り方</a>
+      <a class="cam-link" href="https://youtube.com/shorts/38ZUHgKSQ6g" target="_blank" rel="noopener">上げ方(ショート)</a>
+    </div>
+    <div class="header-links">
+      <span class="links-label">📋 ルールクイズ</span>
+      <a class="quiz-link" href="https://sunfires2002.github.io/futsal-quiz/" target="_blank" rel="noopener">ルールクイズに挑戦する</a>
+    </div>
     <div class="lightbar"></div>
   </header>
 
@@ -403,12 +425,6 @@ fetch(CSV_URL)
     <p>フルサイズの試合動画については、FUN兵庫リーグ事務局に確認の上、関係者向けのYouTube限定公開として掲載しています。</p>
     <p>動画の収益化は行っていません。</p>
     <p>掲載動画についてお気づきの点がありましたら、各YouTube動画のコメント欄よりお知らせください。</p>
-    <h2 style="margin-top:22px">撮影してくれる方へ(スコアカメラの使い方)</h2>
-    <ul class="howto">
-      <li><a href="https://youtube.com/shorts/dSPshA3GmQM" target="_blank" rel="noopener">はじめる前に(ショート)</a></li>
-      <li><a href="https://youtu.be/kNOcxX3ilGs" target="_blank" rel="noopener">撮り方</a></li>
-      <li><a href="https://youtube.com/shorts/38ZUHgKSQ6g" target="_blank" rel="noopener">上げ方(ショート)</a></li>
-    </ul>
   </footer>
 </body>
 </html>
